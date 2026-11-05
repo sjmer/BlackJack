@@ -1,0 +1,20 @@
+{
+  "name": "blackjack-21",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "packageManager": "pnpm@11.28.8",
+  "description": "BLACKJACK 21 —— 单机 + 多人联机 21 点。monorepo：@bj/game 规则引擎 / @bj/server 房间服务 / @bj/client 前端。",
+  "scripts": {
+    "dev": "concurrently -n server,client -c yellow,cyan \"pnpm --filter @bj/server dev\" \"pnpm --filter @bj/client dev\"",
+    "dev:client": "pnpm --filter @bj/client dev",
+    "dev:server": "pnpm --filter @bj/server dev",
+    "build": "pnpm -r typecheck && pnpm --filter @bj/client build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "start": "pnpm --filter @bj/server start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,28 @@
+# dependencies / build output
+node_modules/
+dist/
+.artifacts/
+*.tsbuildinfo
+
+# pnpm local store
+.pnpm-store/
+
+# local machine config (registry mirror lives here; pnpm-workspace.yaml is the shared one)
+.npmrc
+
+# local-only scripts & secrets
+start.local.cmd
+*.local
+.env
+.env.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.lnk
+
+# stray lockfiles from running pnpm inside a package dir (workspace uses the root one)
+packages/*/pnpm-lock.yaml
+
+# internal agent handoff doc — local only, never publish
+HANDOFF.md

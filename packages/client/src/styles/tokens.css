@@ -1,0 +1,143 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB',
+    'Segoe UI', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --bg-abyss: #030a08;
+  --green-950: #04110d;
+  --green-900: #071b15;
+  --green-850: #09241b;
+  --green-800: #0c2e23;
+  --green-700: #114130;
+  --green-600: #185640;
+  --cream: #efe1c2;
+  --cream-bright: #fff2d8;
+  --cream-dim: #c8b897;
+  --cream-faint: rgba(239, 225, 194, 0.56);
+  --gold: #d5a85a;
+  --gold-bright: #f2d48b;
+  --gold-deep: #8b642f;
+  --ink: #171c17;
+  --ink-soft: #283129;
+  --red: #b63e37;
+  --red-bright: #dd5a4d;
+  --red-deep: #641f1e;
+  --teal: #5ba797;
+  --teal-deep: #153e33;
+  --paper: #f2e4c7;
+  --paper-deep: #dfcba4;
+  --shadow-ink: 0 8px 0 #030b08, 0 18px 36px rgba(0, 0, 0, 0.38);
+  --focus: #f6da93;
+
+  --font-display: 'Bungee', 'Arial Black', 'Impact', sans-serif;
+  --font-body:
+    'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB',
+    'Segoe UI', sans-serif;
+  --font-card: Georgia, 'Times New Roman', 'Songti SC', serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--bg-abyss);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow: hidden;
+  background: var(--bg-abyss);
+  color: var(--cream);
+  font-family: var(--font-body);
+}
+
+#root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+kbd {
+  display: inline-flex;
+  min-width: 20px;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border: 1px solid rgba(23, 28, 23, 0.45);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(255, 249, 232, 0.78);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--green-950);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid var(--green-950);
+  border-radius: 999px;
+  background: #345542;
+}

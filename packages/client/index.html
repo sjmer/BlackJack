@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#071b16" />
+    <meta
+      name="description"
+      content="BLACKJACK 21：小丑牌风格的单人 21 点网页游戏。要牌、停牌，与庄家一决高下。"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>BLACKJACK 21 · 单人对庄</title>
+    <style>
+      html,
+      body {
+        min-width: 320px;
+        min-height: 100%;
+        margin: 0;
+        background: #04100c;
+        color: #f2e4c7;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      }
+
+      .boot-screen {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 10px;
+        overflow: auto;
+        padding: 24px;
+        background:
+          radial-gradient(ellipse at 50% 35%, rgba(38, 105, 77, 0.6), transparent 58%),
+          radial-gradient(ellipse at 50% 110%, #020a07, transparent 65%),
+          #071b15;
+        text-align: center;
+      }
+
+      .boot-screen__mark {
+        display: grid;
+        width: 62px;
+        height: 70px;
+        place-items: center;
+        border: 2px solid #171c17;
+        border-radius: 9px;
+        background: linear-gradient(155deg, #fff4db, #d9c093);
+        box-shadow:
+          0 0 0 2px #d5a85a,
+          4px 5px 0 #020906;
+        color: #171c17;
+        font-family: Georgia, serif;
+        font-size: 25px;
+        font-weight: 700;
+        rotate: -5deg;
+      }
+
+      .boot-screen__eyebrow {
+        margin-top: 8px;
+        color: #d5a85a;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+      }
+
+      .boot-screen__title {
+        margin: 0;
+        color: #fff2d8;
+        font-size: clamp(28px, 6vw, 44px);
+        line-height: 1.2;
+        text-wrap: balance;
+      }
+
+      .boot-screen__copy {
+        max-width: 560px;
+        margin: 0;
+        color: rgba(239, 225, 194, 0.65);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      .boot-screen__steps {
+        display: none;
+        max-width: 560px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin: 8px 0;
+      }
+
+      .boot-screen__steps span {
+        padding: 8px 12px;
+        border: 1px solid rgba(213, 168, 90, 0.28);
+        border-radius: 7px;
+        background: rgba(1, 12, 9, 0.3);
+        color: #efe1c2;
+        font-size: 12px;
+      }
+
+      .boot-screen__action {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        margin-top: 10px;
+        padding: 0 18px;
+        border: 2px solid #171c17;
+        border-radius: 8px;
+        background: linear-gradient(155deg, #fff4df, #ddc496);
+        box-shadow: 0 3px 0 #76552d;
+        color: #171c17;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .boot-screen.is-file .boot-screen__steps,
+      .boot-screen.is-file .boot-screen__action {
+        display: flex;
+      }
+
+      .boot-screen.is-file .boot-screen__copy {
+        color: rgba(239, 225, 194, 0.76);
+      }
+
+      .boot-screen__footer {
+        margin-top: 10px;
+        color: rgba(239, 225, 194, 0.32);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot-screen" id="boot-screen">
+        <div class="boot-screen__mark">21</div>
+        <p class="boot-screen__eyebrow">BLACKJACK 21</p>
+        <h1 class="boot-screen__title">正在发牌…</h1>
+        <p class="boot-screen__copy">
+          如果页面一直停在这里，请在项目目录运行 <strong>pnpm dev</strong>（Windows 也可双击
+          <strong>start.cmd</strong>）启动本地服务。
+        </p>
+        <div class="boot-screen__steps">
+          <span>1. 在项目目录执行 pnpm install</span>
+          <span>2. 执行 pnpm dev，或双击 start.cmd</span>
+          <span>3. 浏览器会自动打开游戏</span>
+        </div>
+        <a class="boot-screen__action" href="http://127.0.0.1:5173/">
+          如果服务已启动，点这里进入
+        </a>
+        <p class="boot-screen__footer">index.html 是 Vite 的入口模板，不能直接双击运行。</p>
+      </div>
+    </div>
+    <script>
+      // A Vite page cannot run from a file:// URL. Turn the loading screen into
+      // a clear setup instruction instead of leaving a blank white page.
+      if (window.location.protocol === 'file:') {
+        document.title = '请启动本地开发服务器 · BLACKJACK 21';
+        var boot = document.getElementById('boot-screen');
+        if (boot) {
+          boot.classList.add('is-file');
+          var heading = boot.querySelector('.boot-screen__title');
+          var copy = boot.querySelector('.boot-screen__copy');
+          if (heading) heading.textContent = '请启动本地开发服务器';
+          if (copy) {
+            copy.textContent =
+              '直接双击 index.html 不会运行 Vite 应用。请在项目目录运行 pnpm dev；Windows 用户也可以双击 start.cmd，浏览器会自动打开。';
+          }
+        }
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

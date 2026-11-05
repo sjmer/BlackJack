@@ -1,0 +1,10 @@
+# pnpm 11 reads project settings from this file, not .npmrc.
+# Keep dependency resolution predictable and the pnpm store inside the project.
+packages:
+  - packages/*
+nodeLinker: hoisted
+storeDir: .pnpm-store
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
