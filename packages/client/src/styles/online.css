@@ -212,6 +212,42 @@
   font-size: 13px;
 }
 
+.home-career {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  padding: 9px 12px;
+  border: 1px solid rgba(213, 168, 90, 0.28);
+  border-radius: 10px;
+  background: rgba(2, 12, 9, 0.55);
+  text-align: center;
+}
+
+.home-career__label {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 0.22em;
+}
+
+.home-career__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  color: var(--cream);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-career__stats .is-pos {
+  color: #8fd8c8;
+}
+
+.home-career__stats .is-neg {
+  color: var(--red-bright);
+}
+
 .home-foot {
   margin: 0;
   color: var(--cream-faint);
@@ -293,22 +329,29 @@
 /* ===== Online room ===== */
 
 .online-room {
+  position: relative;
+  height: 100dvh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(17, 65, 48, 0.55), transparent 62%),
-    radial-gradient(ellipse at 50% 115%, rgba(2, 10, 7, 0.9), transparent 60%),
-    var(--green-950);
+    radial-gradient(ellipse at 50% 32%, rgba(38, 105, 77, 0.78), transparent 62%),
+    radial-gradient(ellipse at 50% 100%, rgba(7, 27, 21, 0.65), transparent 65%),
+    var(--green-900);
 }
 
 .online-room__bar {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  padding: 14px 18px 10px;
+  width: min(1280px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 12px 4px 10px;
 }
 
 .online-room__brand {
@@ -359,8 +402,15 @@
   letter-spacing: 0.08em;
 }
 
+.online-room__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .online-room__exit {
-  padding: 8px 16px;
+  min-height: 43px;
+  padding: 0 16px;
   border: 2px solid var(--red-deep);
   border-radius: 9px;
   background: rgba(100, 31, 30, 0.4);
@@ -373,178 +423,323 @@
 }
 
 .online-room__table {
+  position: relative;
+  z-index: 1;
   flex: 1;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  align-content: start;
-  gap: 8px;
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  padding: 0 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(1280px, calc(100% - 28px));
+  margin: 0 auto 14px;
+  padding: 18px 20px 18px;
+  border: 2px solid rgba(213, 168, 90, 0.32);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 24%, rgba(36, 112, 82, 0.52), transparent 68%),
+    linear-gradient(160deg, rgba(15, 52, 39, 0.94), rgba(8, 29, 22, 0.96));
+  box-shadow:
+    inset 0 0 0 5px rgba(213, 168, 90, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 40px rgba(0, 0, 0, 0.32);
+  overflow-y: auto;
 }
 
-/* ===== Duel board (was the dealer area) ===== */
-
-.duel-board {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  margin: 0 auto;
-  width: min(680px, 100%);
-  padding: 14px 16px 10px;
-  border: 2px solid #10231b;
-  border-radius: 14px;
-  background: rgba(4, 17, 13, 0.72);
-  box-shadow: 0 4px 0 #030b08;
-  text-align: center;
+.online-room__stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
 }
 
-.duel-board__eyebrow {
+/* ===== Fixed-height top strip (status in play, scoreboard in round-over) ===== */
+
+.duel-strip {
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(213, 168, 90, 0.28);
+  border-radius: 12px;
+  background: rgba(4, 17, 13, 0.85);
+  box-shadow: 0 3px 0 #030b08;
+  overflow: hidden;
+}
+
+.duel-strip__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.duel-strip__badge {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(213, 168, 90, 0.18);
   color: var(--gold-bright);
+  font-family: var(--font-display);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.14em;
 }
 
-.duel-board__title {
-  color: var(--cream, #f2e4c7);
-  font-size: clamp(20px, 3.4vw, 28px);
-  letter-spacing: 0.06em;
+.duel-strip__badge--result {
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 
-.duel-board__hint {
-  color: rgba(239, 225, 194, 0.68);
+.duel-strip__headline {
+  color: var(--cream-bright);
   font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.duel-board__list {
+.duel-strip__meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--cream-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.duel-strip__pills {
+  flex: 1;
+  min-width: 0;
   display: grid;
   gap: 6px;
-  width: min(520px, 100%);
-  margin: 6px 0 2px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.duel-board__row {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+.duel-strip__pill {
+  min-width: 0;
+  height: 28px;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 12px;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 8px;
   border: 1px solid rgba(213, 168, 90, 0.18);
-  border-radius: 9px;
-  background: rgba(1, 12, 9, 0.4);
-  font-size: 13px;
-}
-
-.duel-board__row.is-you {
-  border-color: rgba(213, 168, 90, 0.6);
-}
-
-.duel-board__row.is-win {
-  border-color: rgba(91, 167, 151, 0.55);
-}
-
-.duel-board__row.is-loss {
-  border-color: rgba(182, 62, 55, 0.5);
-}
-
-.duel-board__rank {
-  color: rgba(239, 225, 194, 0.55);
-  font-weight: 700;
-}
-
-.duel-board__name {
-  color: var(--cream, #f2e4c7);
-  font-weight: 700;
-  text-align: left;
-}
-
-.duel-board__total {
-  color: rgba(239, 225, 194, 0.8);
-  font-variant-numeric: tabular-nums;
-}
-
-.duel-board__total.is-bust {
-  color: var(--red-bright);
-}
-
-.duel-board__outcome {
-  min-width: 34px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-style: normal;
-  font-weight: 800;
+  border-radius: 7px;
+  background: rgba(1, 12, 9, 0.6);
   font-size: 12px;
 }
 
-.duel-board__outcome--win {
-  background: rgba(91, 167, 151, 0.24);
+.duel-strip__pill.is-you {
+  border-color: rgba(213, 168, 90, 0.6);
+}
+
+.duel-strip__pill.is-win {
+  border-color: rgba(91, 167, 151, 0.58);
+  background: rgba(91, 167, 151, 0.16);
+}
+
+.duel-strip__pill.is-loss {
+  border-color: rgba(182, 62, 55, 0.45);
+}
+
+.duel-strip__who {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.duel-strip__rank {
+  flex-shrink: 0;
+  color: rgba(239, 225, 194, 0.58);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.duel-strip__name {
+  min-width: 0;
+  color: var(--cream, #f2e4c7);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.duel-strip__score {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.duel-strip__tag {
+  color: rgba(239, 225, 194, 0.85);
+  font-size: 11px;
+}
+
+.duel-strip__tag.is-bust {
+  color: var(--red-bright);
+}
+
+.duel-strip__delta {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--cream-dim);
+}
+
+.duel-strip__delta.is-pos {
   color: #8fd8c8;
 }
 
-.duel-board__outcome--loss {
-  background: rgba(182, 62, 55, 0.24);
-  color: #ee9c93;
-}
-
-.duel-board__outcome--push {
-  background: rgba(213, 168, 90, 0.2);
-  color: var(--gold-bright);
+.duel-strip__delta.is-neg {
+  color: var(--red-bright);
 }
 
 .online-room__seats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+  gap: 14px;
   align-content: start;
-  padding-bottom: 8px;
+  padding-bottom: 4px;
 }
 
 /* ===== Seat tile ===== */
 
 .seat-tile {
+  position: relative;
   display: grid;
-  gap: 8px;
+  gap: 9px;
   align-content: start;
-  padding: 12px 12px 10px;
+  padding: 14px 13px 12px;
   border: 2px solid #10231b;
-  border-radius: 14px;
-  background: rgba(4, 17, 13, 0.72);
+  border-radius: 15px;
+  background: rgba(4, 17, 13, 0.78);
   box-shadow: 0 4px 0 #030b08;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .seat-tile.is-you {
-  border-color: rgba(213, 168, 90, 0.6);
+  border-color: rgba(213, 168, 90, 0.65);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(213, 168, 90, 0.08), transparent 65%),
+    rgba(6, 23, 17, 0.88);
 }
 
 .seat-tile.is-turn {
   border-color: var(--gold-bright);
   box-shadow:
     0 0 0 2px rgba(242, 212, 139, 0.35),
-    0 4px 0 #030b08;
+    0 6px 18px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
 
 .seat-tile.is-empty {
-  opacity: 0.55;
+  opacity: 0.52;
 }
 
 .seat-tile.is-win {
-  border-color: rgba(91, 167, 151, 0.55);
+  border-color: rgba(91, 167, 151, 0.65);
 }
 
 .seat-tile.is-loss {
-  border-color: rgba(182, 62, 55, 0.5);
+  border-color: rgba(182, 62, 55, 0.55);
+}
+
+/* Live chat speech bubble */
+.seat-tile__bubble {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 20;
+  max-width: 200px;
+  padding: 6px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: linear-gradient(155deg, #fff6e0, #e5cfa3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: bubble-pop 200ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  pointer-events: none;
+}
+
+.seat-tile__bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #e5cfa3;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -80%) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+/* Turn countdown bar */
+.seat-tile__timer {
+  position: absolute;
+  top: 0;
+  right: 8px;
+  left: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.seat-tile__timer-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--gold-bright), var(--red-bright));
+  transform-origin: left center;
+  animation: turn-countdown var(--timer-ms, 30000ms) linear forwards;
+}
+
+@keyframes turn-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 .seat-tile__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -557,7 +752,7 @@
 .seat-tile__name {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: var(--cream);
   font-size: 14px;
   font-weight: 700;
@@ -565,6 +760,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+.seat-crown {
+  font-style: normal;
+  font-size: 13px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 .seat-tile__name--empty {
@@ -583,16 +784,17 @@
 
 .seat-tile__badges {
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
 .seat-badge {
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 5px;
   font-size: 10px;
   font-style: normal;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .seat-badge--ready {
@@ -611,18 +813,88 @@
 }
 
 .seat-badge--turn {
-  background: rgba(213, 168, 90, 0.2);
+  background: rgba(213, 168, 90, 0.24);
   color: var(--gold-bright);
 }
 
 .seat-badge--bust {
-  background: rgba(182, 62, 55, 0.22);
+  background: rgba(182, 62, 55, 0.24);
   color: var(--red-bright);
 }
 
 .seat-badge--host {
   background: rgba(213, 168, 90, 0.2);
   color: var(--gold-bright);
+}
+
+.seat-badge--first {
+  background: rgba(91, 167, 151, 0.2);
+  color: #8fd8c8;
+}
+
+.seat-badge--streak {
+  background: rgba(221, 90, 77, 0.22);
+  color: #ffb27e;
+}
+
+.seat-badge--double {
+  background: rgba(242, 212, 139, 0.26);
+  color: var(--gold-bright);
+}
+
+/* Chips & bet row */
+.seat-tile__chips-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: rgba(1, 10, 8, 0.42);
+  font-size: 11px;
+}
+
+.seat-chip-balance {
+  color: var(--gold-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.seat-chip-balance i {
+  font-style: normal;
+}
+
+.seat-chip-bet {
+  color: var(--cream-dim);
+  font-size: 10px;
+}
+
+.seat-chip-bet.is-doubled {
+  color: var(--gold-bright);
+  font-weight: 800;
+}
+
+.seat-chip-delta {
+  font-family: var(--font-display);
+  font-size: 11px;
+}
+
+.seat-chip-delta.is-pos {
+  color: #8fd8c8;
+}
+
+.seat-chip-delta.is-neg {
+  color: var(--red-bright);
+}
+
+.seat-chip-delta.is-even {
+  color: var(--cream-faint);
+}
+
+.seat-chip-rebuy {
+  color: var(--cream-faint);
+  font-size: 10px;
 }
 
 /* Host-only seat removal: first click arms, second confirms. */
@@ -650,17 +922,39 @@
 }
 
 .seat-tile__cards {
+  --card-w: 62px;
   display: flex;
   justify-content: center;
-  min-height: 64px;
+  min-height: 92px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.seat-card-slot {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
 }
 
-/* Fan overlap for long hands (mirrors the offline .hand__cards rule):
-   factor comes from SeatTile and grows with the card count so any hand
-   length stays inside the tile. */
-.seat-tile__cards .playing-card + .playing-card {
-  margin-left: calc(6px - (var(--card-w, 44px) * var(--seat-overlap-factor, 0)));
+.seat-tile__cards .seat-card-slot + .seat-card-slot {
+  margin-left: calc(6px - (var(--card-w, 62px) * var(--seat-overlap-factor, 0)));
+}
+
+.seat-card__hole-tag {
+  position: absolute;
+  bottom: -6px;
+  z-index: 10;
+  padding: 1px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: rgba(12, 34, 26, 0.94);
+  color: var(--gold-bright);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }
 
 .seat-tile__unknown {
@@ -681,8 +975,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.seat-tile__foot--lobby {
+  padding-top: 2px;
 }
 
 .seat-tile__total {
@@ -699,7 +997,19 @@
   color: var(--gold-bright);
   font-size: 10px;
   font-style: normal;
-  letter-spacing: 0.18em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.seat-tile__charlie {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(213, 168, 90, 0.24);
+  color: var(--gold-bright);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .seat-tile__wld {
@@ -731,12 +1041,96 @@
   color: var(--cream-dim);
 }
 
-/* ===== Room action dock ===== */
+/* ===== Room action dock (inside the felt table) ===== */
 
 .online-room .action-dock {
-  padding: 10px 16px 26px;
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  max-width: 720px;
+  margin: auto auto 0;
+  padding: 10px 8px 2px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   display: flex;
   justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.online-room .action-dock__buttons {
+  width: auto;
+  max-width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.online-room .action-dock .game-button {
+  width: auto;
+  min-width: 148px;
+  min-height: 48px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+
+.online-room .action-dock .game-button--primary,
+.online-room .action-dock .game-button--pending {
+  width: auto;
+  min-width: 196px;
+  min-height: 50px;
+  padding: 8px 24px;
+}
+
+.online-room .action-dock .game-button__copy strong {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.online-room .action-dock .game-button__copy small {
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.online-room .action-dock .game-button__glyph {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+.online-room .action-dock .game-button kbd {
+  display: inline-flex;
+}
+
+.game-button--double {
+  border-color: #6b4c1b;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 248, 220, 0.35), transparent 45%),
+    linear-gradient(155deg, #e5b968 0%, #b88636 62%, #8c611f 100%);
+  color: #171c17;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 4px 0 #4d3510,
+    0 12px 22px rgba(0, 0, 0, 0.26);
+}
+
+.game-button--double .game-button__copy small {
+  color: rgba(23, 28, 23, 0.72);
+}
+
+.game-button--double .game-button__glyph {
+  background: rgba(23, 28, 23, 0.16);
+  border-color: rgba(23, 28, 23, 0.35);
+  color: #171c17;
+  font-family: var(--font-display);
+  font-size: 13px;
 }
 
 /* ===== Room chat dock ===== */
@@ -941,6 +1335,12 @@
 /* ===== Responsive ===== */
 
 @media (max-width: 720px) {
+  .online-room {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
   .online-room__bar {
     justify-content: center;
     text-align: center;
@@ -958,6 +1358,12 @@
   }
 
   .seat-tile__cards {
-    min-height: 56px;
+    --card-w: 50px;
+    min-height: 74px;
+  }
+
+  .online-room .action-dock .game-button {
+    min-width: 108px;
+    padding: 7px 12px;
   }
 }

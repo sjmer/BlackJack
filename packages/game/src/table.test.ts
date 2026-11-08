@@ -575,3 +575,261 @@ describe('blackjack ranking regression', () => {
     expect(state.seats[2].stats.losses).toBe(1);
   });
 });
+
+describe('five-card charlie (五小龙)', () => {
+  it('auto-stands on the 5th non-bust card and beats a multi-card 21', () => {
+    // Alice: 2+3=5, draws 2, 3, 4 → 5 cards totaling 14 (Five-Card Charlie).
+    // Bob: 10+6=16, draws 5 → 3-card 21.
+    let state = duel(
+      [c(S, '2'), c(S, '3')],
+      [c(H, '10'), c(H, '6')],
+      [c(D, '2'), c(D, '3'), c(D, '4'), c(C, '5')],
+    );
+
+    state = tableReducer(state, { type: 'HIT', seatIndex: 0 }); // 3 cards
+    state = tableReducer(state, { type: 'HIT', seatIndex: 0 }); // 4 cards
+    expect(state.turnSeat).toBe(0);
+
+    // 5th non-bust card auto-completes Alice's hand and passes turn to Bob.
+    state = tableReducer(state, { type: 'HIT', seatIndex: 0 });
+    expect(state.seats[0].cards).toHaveLength(5);
+    expect(state.seats[0].acted).toBe(true);
+    expect(state.turnSeat).toBe(1);
+
+    // Bob sees Alice's 5th card masked and her charlie flag hidden during play.
+    const bobMidView = viewForTable(state, 'p1', 'R1');
+    expect(bobMidView.seats[0].charlie).toBe(false);
+    const aliceMidView = viewForTable(state, 'p0', 'R1');
+    expect(aliceMidView.seats[0].charlie).toBe(true);
+
+    // Bob hits to a 3-card 21. Alice's 5-Card Charlie (rank 50) beats 21!
+    state = tableReducer(state, { type: 'HIT', seatIndex: 1 });
+    expect(state.phase).toBe('round-over');
+    expect(state.seats[0].outcome).toBe('win');
+    expect(state.seats[1].outcome).toBe('loss');
+    expect(state.seats[0].chipDelta).toBe(100);
+    expect(state.seats[0].chips).toBe(1100);
+    expect(state.seats[1].chipDelta).toBe(-100);
+    expect(state.seats[1].chips).toBe(900);
+  });
+
+  it('a natural blackjack still beats a five-card charlie', () => {
+    // Alice: A+K natural (rank 100); Bob: 2+2, draws 2, 3, 4 → 5-Card Charlie (rank 50).
+    let state = duel(
+      [c(S, 'A'), c(S, 'K')],
+      [c(H, '2'), c(H, '2')],
+      [c(D, '2'), c(D, '3'), c(D, '4')],
+    );
+
+    expect(state.turnSeat).toBe(1);
+    state = tableReducer(state, { type: 'HIT', seatIndex: 1 });
+    state = tableReducer(state, { type: 'HIT', seatIndex: 1 });
+    state = tableReducer(state, { type: 'HIT', seatIndex: 1 });
+
+    expect(state.phase).toBe('round-over');
+    expect(state.seats[0].outcome).toBe('win');
+    expect(state.seats[1].outcome).toBe('loss');
+  });
+});
+
+describe('chips, double down and bankruptcy relief', () => {
+  it('doubles the stake, draws one card, auto-stands and settles 2x', () => {
+    // Alice: 5+6=11, doubles and draws K → 21 (bet 200). Bob: 10+9=19 stands.
+    let state = duel([c(S, '5'), c(S, '6')], [c(H, '10'), c(H, '9')], [c(D, 'K')]);
+
+    expect(state.seats[0].chips).toBe(900);
+    expect(state.seats[0].bet).toBe(100);
+
+    const aliceView = viewForTable(state, 'p0', 'R1');
+    expect(aliceView.seats[0].canDouble).toBe(true);
+    expect(aliceView.seats[1].canDouble).toBe(false);
+
+    state = tableReducer(state, { type: 'DOUBLE', seatIndex: 0 });
+    expect(state.seats[0].chips).toBe(800);
+    expect(state.seats[0].bet).toBe(200);
+    expect(state.seats[0].doubled).toBe(true);
+    expect(state.seats[0].cards).toHaveLength(3);
+    expect(state.seats[0].acted).toBe(true);
+    expect(state.turnSeat).toBe(1);
+
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+    expect(state.phase).toBe('round-over');
+    expect(state.seats[0].outcome).toBe('win');
+    expect(state.seats[0].chipDelta).toBe(200);
+    expect(state.seats[0].chips).toBe(1200);
+    expect(state.seats[1].outcome).toBe('loss');
+    expect(state.seats[1].chipDelta).toBe(-100);
+    expect(state.seats[1].chips).toBe(900);
+  });
+
+  it('rejects DOUBLE after already hitting a 3rd card', () => {
+    let state = duel([c(S, '4'), c(S, '5')], [c(H, '10'), c(H, '7')], [c(D, '2'), c(C, 'K')]);
+
+    state = tableReducer(state, { type: 'HIT', seatIndex: 0 });
+    expect(state.seats[0].cards).toHaveLength(3);
+
+    const afterIllegalDouble = tableReducer(state, { type: 'DOUBLE', seatIndex: 0 });
+    expect(afterIllegalDouble).toBe(state);
+  });
+
+  it('replenishes chips automatically when a player goes bankrupt', () => {
+    let state = seated(['Alice', 'Bob']);
+    // Simulate Alice down to 100 chips before the round starts.
+    state = {
+      ...state,
+      seats: state.seats.map((s) => (s.seatIndex === 0 ? { ...s, chips: 100 } : s)),
+    };
+    state = readyAll(state);
+    state = tableReducer(state, {
+      type: 'START_ROUND',
+      deck: [c(S, '10'), c(S, '5'), c(H, '10'), c(H, '9')],
+    });
+    state = tableReducer(state, { type: 'DEAL_COMPLETE' });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 0 });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+
+    // Alice lost her last 100 chips (chips === 0).
+    expect(state.seats[0].chips).toBe(0);
+
+    // Returning to lobby grants bankruptcy relief back to 1000 chips.
+    const lobby = tableReducer(state, { type: 'BACK_TO_LOBBY' });
+    expect(lobby.seats[0].chips).toBe(1000);
+    expect(lobby.seats[0].rebuyCount).toBe(1);
+  });
+
+  it('distributes the entire losers pot to the winner(s) in multiplayer and when opponents double', () => {
+    // 1. 3-player round: Alice (20) beats Bob (18) and Carol (17).
+    // Bob and Carol each lose -100; Alice wins the entire +200 pot!
+    let state = readyAll(seated(['Alice', 'Bob', 'Carol']));
+    state = tableReducer(state, {
+      type: 'START_ROUND',
+      deck: [
+        c(S, '10'), c(S, 'Q'), // Alice 20
+        c(H, '10'), c(H, '8'), // Bob 18
+        c(D, '10'), c(D, '7'), // Carol 17
+      ],
+    });
+    state = tableReducer(state, { type: 'DEAL_COMPLETE' });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 0 });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 2 });
+
+    expect(state.seats[0].outcome).toBe('win');
+    expect(state.seats[0].chipDelta).toBe(200);
+    expect(state.seats[0].chips).toBe(1200);
+    expect(state.seats[1].chipDelta).toBe(-100);
+    expect(state.seats[2].chipDelta).toBe(-100);
+
+    // 2. 3-player tied top hands: Alice (19) and Bob (19) tie for 1st, Carol (18) loses -100.
+    // Alice and Bob each receive +50 from Carol's lost bet!
+    let tied = readyAll(seated(['Alice', 'Bob', 'Carol']));
+    tied = tableReducer(tied, {
+      type: 'START_ROUND',
+      deck: [
+        c(S, '10'), c(S, '9'), // Alice 19
+        c(H, '10'), c(H, '9'), // Bob 19
+        c(D, '10'), c(D, '8'), // Carol 18
+      ],
+    });
+    tied = tableReducer(tied, { type: 'DEAL_COMPLETE' });
+    tied = tableReducer(tied, { type: 'STAND', seatIndex: 0 });
+    tied = tableReducer(tied, { type: 'STAND', seatIndex: 1 });
+    tied = tableReducer(tied, { type: 'STAND', seatIndex: 2 });
+
+    expect(tied.seats[0].outcome).toBe('push');
+    expect(tied.seats[1].outcome).toBe('push');
+    expect(tied.seats[2].outcome).toBe('loss');
+    expect(tied.seats[0].chipDelta).toBe(50);
+    expect(tied.seats[0].chips).toBe(1050);
+    expect(tied.seats[1].chipDelta).toBe(50);
+    expect(tied.seats[1].chips).toBe(1050);
+    expect(tied.seats[2].chipDelta).toBe(-100);
+    expect(tied.seats[2].chips).toBe(900);
+
+    // 3. Opponent doubles down (bet 200) and loses to Alice (bet 100): Alice wins +200!
+    let oppDouble = duel([c(S, '10'), c(S, '9')], [c(H, '5'), c(H, '6')], [c(D, '5')]);
+    oppDouble = tableReducer(oppDouble, { type: 'STAND', seatIndex: 0 });
+    oppDouble = tableReducer(oppDouble, { type: 'DOUBLE', seatIndex: 1 }); // Bob 11 + 5 = 16 (bet 200)
+    expect(oppDouble.seats[0].outcome).toBe('win');
+    expect(oppDouble.seats[0].chipDelta).toBe(200);
+    expect(oppDouble.seats[0].chips).toBe(1200);
+    expect(oppDouble.seats[1].outcome).toBe('loss');
+    expect(oppDouble.seats[1].chipDelta).toBe(-200);
+    expect(oppDouble.seats[1].chips).toBe(800);
+  });
+});
+
+describe('turn rotation and early ready in round-over', () => {
+  it('rotates startSeat across consecutive rounds and allows early ready from round-over', () => {
+    // Round 1: startSeat is 0 (Alice).
+    let state = duel([c(S, '10'), c(S, '8')], [c(H, '10'), c(H, '7')]);
+    expect(state.startSeat).toBe(0);
+    expect(state.turnSeat).toBe(0);
+
+    state = tableReducer(state, { type: 'STAND', seatIndex: 0 });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+    expect(state.phase).toBe('round-over');
+
+    // Players ready up directly in round-over without waiting for BACK_TO_LOBBY.
+    state = readyAll(state);
+    expect(canStartRound(state)).toBe(true);
+
+    // Round 2: startSeat rotates to 1 (Bob acts first, then Alice).
+    state = tableReducer(state, {
+      type: 'START_ROUND',
+      deck: [c(S, '10'), c(S, '6'), c(H, '10'), c(H, '7')],
+    });
+    state = tableReducer(state, { type: 'DEAL_COMPLETE' });
+
+    expect(state.roundId).toBe(2);
+    expect(state.startSeat).toBe(1);
+    expect(state.turnSeat).toBe(1);
+
+    // Bob acts first, then turn wraps around to Alice (seat 0).
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+    expect(state.phase).toBe('player-turn');
+    expect(state.turnSeat).toBe(0);
+
+    state = tableReducer(state, { type: 'STAND', seatIndex: 0 });
+    expect(state.phase).toBe('round-over');
+  });
+
+  it('auto-readies veteran non-host players after a round while keeping host manual ready', () => {
+    // First entry: both Alice (host p0) and Bob (p1) start unready and must manually ready.
+    let state = seated(['Alice', 'Bob']);
+    expect(state.seats[0].ready).toBe(false);
+    expect(state.seats[1].ready).toBe(false);
+
+    state = readyAll(state);
+    state = tableReducer(state, {
+      type: 'START_ROUND',
+      deck: [c(S, '10'), c(S, '9'), c(H, '10'), c(H, '7')],
+    });
+    state = tableReducer(state, { type: 'DEAL_COMPLETE' });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 0 });
+    state = tableReducer(state, { type: 'STAND', seatIndex: 1 });
+
+    // Round 1 over: Bob (veteran non-host) is auto-readied; Alice (host) stays unready.
+    expect(state.phase).toBe('round-over');
+    expect(state.seats[0].ready).toBe(false);
+    expect(state.seats[1].ready).toBe(true);
+    expect(canStartRound(state)).toBe(false);
+
+    // Even after recycling to lobby, Bob stays auto-readied and Alice stays unready.
+    state = tableReducer(state, { type: 'BACK_TO_LOBBY' });
+    expect(state.phase).toBe('lobby');
+    expect(state.seats[0].ready).toBe(false);
+    expect(state.seats[1].ready).toBe(true);
+
+    // A brand-new player Carol (p2) enters for the first time -> starts unready.
+    state = tableReducer(state, { type: 'SIT', seatIndex: 2, playerId: 'p2', name: 'Carol' });
+    expect(state.seats[2].ready).toBe(false);
+
+    // Host Alice readies, but Carol (first-time joiner) still needs to manually ready once.
+    state = readyUp(state, 'p0');
+    expect(canStartRound(state)).toBe(false);
+
+    state = readyUp(state, 'p2');
+    expect(canStartRound(state)).toBe(true);
+  });
+});

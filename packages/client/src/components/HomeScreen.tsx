@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { OnlineGameApi } from '../net/useOnlineGame';
+import { loadOnlineCareerStats } from '../state/storage';
 
 const NAME_KEY = 'bj.player-name.v1';
 
@@ -27,7 +28,9 @@ function saveName(name: string): void {
 export function HomeScreen({ game, onOffline }: HomeScreenProps) {
   const [name, setName] = useState(loadName);
   const [joinCode, setJoinCode] = useState('');
+  const [career] = useState(loadOnlineCareerStats);
   const resumedRef = useRef(false);
+  const careerTotal = career.wins + career.losses + career.pushes;
 
   // If this tab was in a room moments ago (refresh / accidental close),
   // silently try to rejoin it before showing the menu.
@@ -132,6 +135,19 @@ export function HomeScreen({ game, onOffline }: HomeScreenProps) {
           </div>
 
           {game.error && <p className="home-error">{game.error}</p>}
+
+          {careerTotal > 0 && (
+            <div className="home-career" aria-label="联机生涯战绩">
+              <span className="home-career__label">ONLINE CAREER</span>
+              <div className="home-career__stats">
+                <span>{career.wins}胜 {career.losses}负 {career.pushes}平</span>
+                <span>最高 {career.bestStreak} 连胜</span>
+                <span className={career.netChips >= 0 ? 'is-pos' : 'is-neg'}>
+                  净筹码 {career.netChips >= 0 ? `+${career.netChips}` : career.netChips}
+                </span>
+              </div>
+            </div>
+          )}
 
           <p className="home-foot">联机房间由房主设备或服务器托管 · 凭房间码邀请好友</p>
         </div>

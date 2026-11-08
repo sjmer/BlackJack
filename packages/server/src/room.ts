@@ -25,7 +25,7 @@ export const ROOM_IDLE_TTL_MS = 10 * 60_000;
  * Only rapid in-hand actions are rate limited. Lobby intents are rare and
  * idempotent, so swallowing one to fight spam would only create bugs.
  */
-const RATE_LIMITED_INTENTS = new Set<IntentType>(['hit', 'stand']);
+const RATE_LIMITED_INTENTS = new Set<IntentType>(['hit', 'stand', 'double']);
 
 /** Injectable pacing so tests can fast-forward the table. */
 export interface RoomTimings {
@@ -43,7 +43,7 @@ export const DEFAULT_TIMINGS: RoomTimings = {
   roundRecycle: ROUND_RECYCLE_MS,
 };
 
-export type IntentType = 'ready' | 'unready' | 'hit' | 'stand' | 'standUp';
+export type IntentType = 'ready' | 'unready' | 'hit' | 'stand' | 'double' | 'standUp';
 
 export interface Intent {
   type: IntentType;
@@ -63,12 +63,14 @@ export class Room {
   private readonly timings: RoomTimings;
   private readonly sockets = new Map<string, Socket>(); // playerId -> socket
   private readonly attachAt = new Map<string, number>(); // playerId -> last attach time
+  private readonly spectators = new Set<string>(); // playerId of unseated joiners waiting for a seat
   private readonly timers = new Set<NodeJS.Timeout>();
   private readonly lastIntentAt = new Map<string, number>(); // socket.id -> timestamp
   private readonly lastChatAt = new Map<string, number>(); // socket.id -> timestamp
   private readonly chatLog: ChatMessage[] = [];
   /** playerId of the room creator; succession is computed on demand. */
   private hostPlayerId: string | null = null;
+  private activeDurationMs: number | null = null;
   private lastActivityAt = Date.now();
 
   constructor(
@@ -149,6 +151,12 @@ export class Room {
       });
     }
 
+    if (this.hasSeat(playerId)) {
+      this.spectators.delete(playerId);
+    } else {
+      this.spectators.add(playerId);
+    }
+
     // Late joiners catch up on what was said before them.
     socket.emit('chat:history', [...this.chatLog]);
     this.sendStateTo(socket);
@@ -163,6 +171,7 @@ export class Room {
 
     this.sockets.delete(playerId);
     this.attachAt.delete(playerId);
+    this.spectators.delete(playerId);
     this.lastIntentAt.delete(socket.id);
     this.lastChatAt.delete(socket.id);
     this.touch();
@@ -190,8 +199,11 @@ export class Room {
 
     this.touch();
 
-    // A hit/stand from a previous round is stale by definition.
-    if ((intent.type === 'hit' || intent.type === 'stand') && intent.roundId !== this.state.roundId) {
+    // A hit/stand/double from a previous round is stale by definition.
+    if (
+      (intent.type === 'hit' || intent.type === 'stand' || intent.type === 'double') &&
+      intent.roundId !== this.state.roundId
+    ) {
       return;
     }
 
@@ -215,7 +227,13 @@ export class Room {
           this.apply({ type: 'STAND', seatIndex });
         }
         break;
+      case 'double':
+        if (seatIndex !== null) {
+          this.apply({ type: 'DOUBLE', seatIndex });
+        }
+        break;
       case 'standUp':
+        this.spectators.delete(playerId);
         this.apply({ type: 'STAND_UP', playerId });
         break;
     }
@@ -264,6 +282,7 @@ export class Room {
     }
 
     const targetPlayerId = target.playerId;
+    this.spectators.delete(targetPlayerId);
     const before = this.state;
     this.apply({ type: 'KICK', seatIndex, byPlayerId: playerId });
 
@@ -344,6 +363,7 @@ export class Room {
     }
 
     this.sockets.clear();
+    this.spectators.clear();
   }
 
   private seatOf(playerId: string): number | null {
@@ -359,6 +379,49 @@ export class Room {
     this.apply({ type: 'START_ROUND', deck: shuffleDeck(createDeck()) });
   }
 
+  /**
+   * Automatically seat waiting spectators whenever the table is in lobby or
+   * round-over and has free seats.
+   */
+  private seatSpectators(): void {
+    if (this.state.phase !== 'lobby' && this.state.phase !== 'round-over') {
+      return;
+    }
+
+    for (const playerId of [...this.spectators]) {
+      const socket = this.sockets.get(playerId);
+
+      if (!socket) {
+        this.spectators.delete(playerId);
+        continue;
+      }
+
+      if (this.hasSeat(playerId)) {
+        this.spectators.delete(playerId);
+        continue;
+      }
+
+      const freeSeat = this.state.seats.find((seat) => seat.playerId === '' && seat.name === '');
+
+      if (!freeSeat) {
+        break;
+      }
+
+      const name = typeof socket.data?.name === 'string' && socket.data.name ? socket.data.name : '玩家';
+      const next = tableReducer(this.state, {
+        type: 'SIT',
+        seatIndex: freeSeat.seatIndex,
+        playerId,
+        name,
+      });
+
+      if (next !== this.state) {
+        this.state = next;
+        this.spectators.delete(playerId);
+      }
+    }
+  }
+
   private apply(action: TableAction): void {
     const next = tableReducer(this.state, action);
 
@@ -367,15 +430,18 @@ export class Room {
     }
 
     this.state = next;
+    this.seatSpectators();
     this.clearTimers();
-    this.broadcast();
     this.schedule();
+    this.broadcast();
   }
 
   private schedule(): void {
+    this.activeDurationMs = null;
     const { phase } = this.state;
 
     if (phase === 'dealing') {
+      this.activeDurationMs = this.timings.dealing;
       this.timer(this.timings.dealing, () => this.apply({ type: 'DEAL_COMPLETE' }));
       return;
     }
@@ -387,8 +453,10 @@ export class Room {
       const turnSeat = this.state.turnSeat;
       const actingSeat = turnSeat !== null ? this.state.seats[turnSeat] : undefined;
       const offline = actingSeat !== undefined && isSeatOccupied(actingSeat) && !actingSeat.connected;
+      const duration = offline ? this.timings.offlineSeatTimeout : this.timings.seatTimeout;
+      this.activeDurationMs = duration;
 
-      this.timer(offline ? this.timings.offlineSeatTimeout : this.timings.seatTimeout, () => {
+      this.timer(duration, () => {
         const seatIndex = this.state.turnSeat;
 
         if (this.state.phase === 'player-turn' && seatIndex !== null) {
@@ -399,6 +467,7 @@ export class Room {
     }
 
     if (phase === 'round-over') {
+      this.activeDurationMs = this.timings.roundRecycle;
       this.timer(this.timings.roundRecycle, () => this.apply({ type: 'BACK_TO_LOBBY' }));
     }
   }
@@ -411,7 +480,10 @@ export class Room {
 
   private sendStateTo(socket: Socket): void {
     const playerId = typeof socket.data?.playerId === 'string' ? socket.data.playerId : null;
-    socket.emit('state', viewForTable(this.state, playerId, this.id, this.effectiveHostId()));
+    socket.emit(
+      'state',
+      viewForTable(this.state, playerId, this.id, this.effectiveHostId(), this.activeDurationMs),
+    );
   }
 
   private touch(): void {

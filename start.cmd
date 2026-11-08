@@ -22,6 +22,12 @@ if not exist "packages\client\dist\index.html" (
 
 if not defined PORT set "PORT=3000"
 
+rem Free the target port if a previous server instance is still listening
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTENING"') do (
+  echo Stopping previous server process on port %PORT% ^(PID %%a^)...
+  taskkill /F /PID %%a >nul 2>nul
+)
+
 echo [3/3] Starting server at http://127.0.0.1:%PORT%/  (Ctrl+C to stop)
 start "" "http://127.0.0.1:%PORT%/"
 call pnpm --filter @bj/server start

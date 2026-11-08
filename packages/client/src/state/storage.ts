@@ -1,8 +1,18 @@
-import { DEFAULT_SETTINGS, EMPTY_STATS, type Settings, type Stats } from '@bj/game';
+import { DEFAULT_SETTINGS, EMPTY_STATS, recordDuelRound, type DuelOutcome, type Settings, type Stats } from '@bj/game';
 
 const STATS_KEY = 'blackjack.stats.v1';
 const SETTINGS_KEY = 'blackjack.settings.v1';
 const ROUND_KEY = 'blackjack.round.v1';
+const ONLINE_CAREER_KEY = 'bj.online.career.v1';
+
+export interface OnlineCareerStats extends Stats {
+  netChips: number;
+}
+
+export const EMPTY_ONLINE_CAREER: OnlineCareerStats = {
+  ...EMPTY_STATS,
+  netChips: 0,
+};
 
 function nonNegativeInteger(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0
@@ -93,4 +103,51 @@ export function saveSettings(settings: Settings): void {
   } catch {
     // Ignore storage failures; preferences simply last for this session.
   }
+}
+
+export function loadOnlineCareerStats(): OnlineCareerStats {
+  try {
+    const raw = window.localStorage.getItem(ONLINE_CAREER_KEY);
+    if (!raw) {
+      return { ...EMPTY_ONLINE_CAREER };
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed)) {
+      return { ...EMPTY_ONLINE_CAREER };
+    }
+
+    const streak = nonNegativeInteger(parsed.streak);
+    const netChips = typeof parsed.netChips === 'number' && Number.isFinite(parsed.netChips)
+      ? Math.trunc(parsed.netChips)
+      : 0;
+
+    return {
+      wins: nonNegativeInteger(parsed.wins),
+      losses: nonNegativeInteger(parsed.losses),
+      pushes: nonNegativeInteger(parsed.pushes),
+      streak,
+      bestStreak: Math.max(streak, nonNegativeInteger(parsed.bestStreak)),
+      netChips,
+    };
+  } catch {
+    return { ...EMPTY_ONLINE_CAREER };
+  }
+}
+
+export function recordOnlineCareerRound(outcome: DuelOutcome, chipDelta: number): OnlineCareerStats {
+  const current = loadOnlineCareerStats();
+  const nextStats = recordDuelRound(current, outcome);
+  const next: OnlineCareerStats = {
+    ...nextStats,
+    netChips: current.netChips + chipDelta,
+  };
+
+  try {
+    window.localStorage.setItem(ONLINE_CAREER_KEY, JSON.stringify(next));
+  } catch {
+    // Storage failures never block play.
+  }
+
+  return next;
 }

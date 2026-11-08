@@ -1,7 +1,8 @@
 import { getHandValue, isBlackjack } from './hand';
+import { isFiveCardCharlie } from './duel';
 import type { DuelOutcome } from './duel';
 import type { Card, HandValue, Stats } from './types';
-import type { TablePhase, TableState } from './table';
+import { canDoubleSeat, type TablePhase, type TableState } from './table';
 
 /**
  * Placeholder sent instead of another player's hole card. It is constant, so
@@ -29,10 +30,21 @@ export interface SeatView {
    * only for the owner's own seat or once the showdown reveals every hand.
    */
   natural: boolean;
+  /**
+   * Server-computed Five-Card Charlie flag (5 cards without busting), masked
+   * like `natural` so opponents cannot tell whether the 5th hidden card busted.
+   */
+  charlie: boolean;
   /** How many of this seat's cards are hidden from this viewer. */
   hiddenCount: number;
   /** This seat's owner is the room's acting host (manager of the table). */
   isHost: boolean;
+  chips: number;
+  bet: number;
+  doubled: boolean;
+  chipDelta: number | null;
+  rebuyCount: number;
+  canDouble: boolean;
 }
 
 export interface TableView {
@@ -43,7 +55,10 @@ export interface TableView {
   holeRevealed: boolean;
   deckRemaining: number;
   turnSeat: number | null;
+  startSeat: number | null;
   yourSeatIndex: number | null;
+  /** Duration in ms of the active phase/turn timer, or null in lobby. */
+  phaseDurationMs: number | null;
 }
 
 /**
@@ -60,6 +75,7 @@ export function viewForTable(
   viewerPlayerId: string | null,
   roomId: string,
   hostPlayerId: string | null = null,
+  phaseDurationMs: number | null = null,
 ): TableView {
   const revealed = state.holeRevealed;
 
@@ -82,8 +98,15 @@ export function viewForTable(
       stats: seat.stats,
       isYou,
       natural: isYou || revealed ? isBlackjack(seat.cards) : false,
+      charlie: isYou || revealed ? isFiveCardCharlie(seat.cards) : false,
       hiddenCount: hideLast ? 1 : 0,
       isHost: hostPlayerId !== null && seat.playerId === hostPlayerId,
+      chips: seat.chips,
+      bet: seat.bet,
+      doubled: seat.doubled,
+      chipDelta: seat.chipDelta,
+      rebuyCount: seat.rebuyCount,
+      canDouble: isYou && canDoubleSeat(state, seat.seatIndex),
     };
   });
 
@@ -95,6 +118,8 @@ export function viewForTable(
     holeRevealed: revealed,
     deckRemaining: state.deck.length,
     turnSeat: state.turnSeat,
+    startSeat: state.startSeat,
     yourSeatIndex: seats.find((seat) => seat.isYou)?.seatIndex ?? null,
+    phaseDurationMs,
   };
 }

@@ -170,7 +170,7 @@ async function seatTwoPlayers() {
  * first turn — the caller's turn-based assertions can then rely on it.
  */
 async function dealUntilSeat0Turn(p1: Player, p2: Player): Promise<TableView> {
-  for (let attempt = 0; attempt < 12; attempt++) {
+  for (let attempt = 0; attempt < 16; attempt++) {
     // Stale snapshots from earlier (failed) deals must not satisfy the
     // transient scan below — start every attempt with a clean memory.
     p1.forgetHistory();
@@ -180,21 +180,27 @@ async function dealUntilSeat0Turn(p1: Player, p2: Player): Promise<TableView> {
     p2.intent('ready');
 
     const view = await p1.waitFor(
-      (candidate) =>
-        (candidate.phase === 'player-turn' && candidate.turnSeat === 0) ||
-        candidate.phase === 'round-over',
+      (candidate) => candidate.phase === 'player-turn' || candidate.phase === 'round-over',
       4000,
       { transient: true },
     );
 
-    if (view.phase === 'player-turn') {
+    if (view.phase === 'player-turn' && view.startSeat === 0 && view.turnSeat === 0) {
       return view;
+    }
+
+    if (view.phase === 'player-turn') {
+      p1.intent('stand', { roundId: view.roundId });
+      p2.intent('stand', { roundId: view.roundId });
+      await new Promise((resolve) => setTimeout(resolve, 35));
+      p1.intent('stand', { roundId: view.roundId });
+      p2.intent('stand', { roundId: view.roundId });
     }
 
     await p1.waitFor((candidate) => candidate.phase === 'lobby', 8000);
   }
 
-  throw new Error('seat 0 never drew a playable hand in 12 deals');
+  throw new Error('seat 0 never drew a playable hand in 16 deals');
 }
 
 describe('online room integration', () => {
@@ -467,5 +473,64 @@ describe('online room integration', () => {
 
     p1.close();
     p2.close();
+  });
+
+  it('supports double down intent, settles chips and broadcasts phaseDurationMs', { timeout: 15_000 }, async () => {
+    const { p1, p2 } = await seatTwoPlayers();
+    const turnView = await dealUntilSeat0Turn(p1, p2);
+
+    expect(turnView.phaseDurationMs).toBe(FAST_TIMINGS.seatTimeout);
+    expect(turnView.seats[0].canDouble).toBe(true);
+    expect(turnView.seats[0].bet).toBe(100);
+    expect(turnView.seats[0].chips).toBe(900);
+
+    p1.intent('double', { roundId: turnView.roundId });
+
+    const next = await p2.waitFor(
+      (view) => (view.phase === 'player-turn' && view.turnSeat === 1) || view.phase === 'round-over',
+      4000,
+      { transient: true },
+    );
+
+    if (next.phase === 'player-turn') {
+      expect(next.seats[0].doubled).toBe(true);
+      expect(next.seats[0].bet).toBe(200);
+      expect(next.seats[0].cards).toHaveLength(3);
+      p2.intent('stand', { roundId: turnView.roundId });
+    }
+
+    const settled = await p1.waitFor((view) => view.phase === 'round-over', 4000, { transient: true });
+    expect(settled.seats[0].doubled).toBe(true);
+    expect(settled.seats[0].chipDelta).not.toBeNull();
+    expect([200, 250, 0, -200]).toContain(settled.seats[0].chipDelta);
+
+    p1.close();
+    p2.close();
+  });
+
+  it('auto-seats a waiting spectator as soon as a seat opens up', { timeout: 15_000 }, async () => {
+    const players = Array.from({ length: 5 }, () => new Player());
+    const info0 = await players[0].create('P0');
+
+    for (let i = 1; i < 5; i++) {
+      await players[i].join(info0.roomId, `P${i}`);
+    }
+
+    // 6th player joins while all 5 seats are occupied -> spectator.
+    const spectator = new Player();
+    await spectator.join(info0.roomId, 'Spec');
+    const specView = await spectator.waitFor((view) => view.phase === 'lobby');
+    expect(specView.yourSeatIndex).toBeNull();
+
+    // Seat 2 leaves the table -> spectator automatically takes seat 2.
+    players[2].intent('standUp');
+    const seatedView = await spectator.waitFor((view) => view.yourSeatIndex === 2);
+    expect(seatedView.seats[2].name).toBe('Spec');
+    expect(seatedView.seats[2].occupied).toBe(true);
+
+    spectator.close();
+    for (const p of players) {
+      p.close();
+    }
   });
 });
