@@ -125,7 +125,3 @@ pnpm build       # typecheck + 前端生产构建
 
 - 单机：`blackjack.stats.v1`（战绩）、`blackjack.settings.v1`（音效开关）等 localStorage。
 - 联机：`bj.online.session.v1`（localStorage，断线重连凭据，关标签页/重启浏览器后仍可回到原座位）、`bj.online.career.v1`（localStorage，联机生涯总局数/胜场/最高连胜/累计净赢筹码）；房间实时牌局由服务端内存态保存，服务重启后房间清空。
-
-## 致谢
-
-整体视觉氛围受到桌面卡牌游戏与复古拼贴风格启发，但所有牌面、人头牌 SVG、牌背、图标、纹理和文案均为本项目原创，不含《小丑牌》（Balatro）的游戏素材，也与该作品及其发行商无关联。
